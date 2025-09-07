@@ -215,7 +215,14 @@ myvenv/
 
 # access keys
 access_key.txt
+secrets/*
+secrets/.
 
 # vscode
 *workspace
 .vscode
+
+# others
+problem_statement.md
+aws_crypto_pipeline_prompt.md
+ref/*
