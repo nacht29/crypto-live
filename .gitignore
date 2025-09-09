@@ -212,6 +212,7 @@ __marimo__/
 
 # python
 myvenv/
+diagram.py
 
 # access keys
 access_key.txt
@@ -226,5 +227,5 @@ secrets/.
 problem_statement.md
 aws_crypto_pipeline_prompt.md
 ref/*
-
 test*
+batch_json*
