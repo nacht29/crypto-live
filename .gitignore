@@ -226,3 +226,5 @@ secrets/.
 problem_statement.md
 aws_crypto_pipeline_prompt.md
 ref/*
+
+test*
