@@ -1,6 +1,4 @@
-import asyncio
 import json
-import signal
 import boto3
 from botocore.exceptions import ClientError
 from typing import *
