@@ -1,11 +1,7 @@
-import os
 import signal
 import asyncio
 import boto3
-import json
-import tempfile # remove this later
 from binance import AsyncClient, BinanceSocketManager
-from pathlib import Path
 from typing import *
 from datetime import datetime
 from typing import *

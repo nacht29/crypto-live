@@ -1,7 +1,6 @@
 import io
 import json
 import gzip
-import boto3
 from typing import *
 from datetime import datetime
 from typing import *
