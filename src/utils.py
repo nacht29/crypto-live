@@ -1,34 +1,61 @@
+import io
 import json
+import gzip
 import boto3
-from botocore.exceptions import ClientError
 from typing import *
+from datetime import datetime
+from typing import *
+
+# ===================
+# = Secrets Manager =
+# ===================
 
 # retrieve secret from Secrets Manager
 # get the stream symbol for each coin for miniTicker stream 
-def get_secret(secret_name:str, region_name:str, profile_name:str) -> Dict:
+def get_secret(session, secret_name:str, region_name:str, profile_name:str) -> Dict:
 	secret_name = secret_name
 	region_name = region_name
 
 	# create a Secrets Manager client
 	try:
-		session = boto3.session.Session(profile_name=profile_name)
-		client = session.client(
-			service_name='secretsmanager',
-			region_name=region_name
-		)
+		client = session.client(service_name='secretsmanager',region_name=region_name)
 	except Exception as error:
-		print(f"Failed to create boto3 client.\n\n{error}")
+		print(f"Failed to create boto3 session for Secrets Manager.\n\n{error}")
 		raise
 
 	# retrieve secret from secret ID
 	try:
 		get_secret_value_response = client.get_secret_value(SecretId=secret_name)
-	except ClientError as error:
+	except Exception as error:
 		print(f"Failed to retrieve secret.\n\n{error}") 
 		raise
 
 	secret = get_secret_value_response['SecretString']
 	return json.loads(secret)
+
+# ===============
+# = S3 functions=
+# ===============
+def write_jsonl_bytes(batch_data:list[dict]) -> bytes:
+	jsonl_buffer = io.BytesIO()
+
+	for row in batch_data:
+		jsonl_buffer.write(json.dumps(row, separators=[",", ":"]).encode("utf-8"))
+		jsonl_buffer.write(b"\n")
+
+	return jsonl_buffer.getvalue()
+
+def gzip_file(data:bytes) -> bytes:
+	gzip_buffer = io.BytesIO()
+
+	with gzip.GzipFile(fileobj=gzip_buffer, mode='wb') as open_buffer:
+		open_buffer.write(data)
+
+	return gzip_buffer.getvalue()
+
+# =====================
+# = Utility functions =
+# =====================
 
 # make stream data more readable
 def format_stream_data(stream_data:Dict):
@@ -51,3 +78,43 @@ def format_stream_data(stream_data:Dict):
 		raise
 	
 	return format_data
+
+# ===============
+# = Placeholder =
+# ===============
+
+import os
+import asyncio
+import tempfile
+
+from pathlib import Path
+async def write_to_file(batch_queue:asyncio.Queue, output_dir:str, outfile_name_format:str):
+	# ensure output directory exists
+	if not os.path.exists(output_dir):
+		os.makedirs(output_dir)
+	
+	while True:
+		# retrieve batch data
+		batch_data = await batch_queue.get()
+
+		# filename + timestamp
+		timestamp = datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
+		outfile_name = f"{outfile_name_format}-{timestamp}.jsonl"
+		
+		
+		try:
+			# create a temporaty file in "wb" mode to write bytes into the file
+			with tempfile.NamedTemporaryFile("wb", delete=False, dir=output_dir) as tmp_file:
+				# write string data as bytes row y row
+				for row in batch_data:
+					# turn string data to UTF-8 encoded bytes + a new line byte
+					tmp_file.write(json.dumps(row, separators=(",", ":")).encode("utf-8"))
+					tmp_file.write(b"\n")
+
+				# replace bin file with physical JSON
+				tmp_filepath = Path(tmp_file.name)
+				outfile_path = Path(f"{output_dir}/{outfile_name}")
+				os.replace(tmp_filepath, outfile_path)
+
+		finally:
+			batch_queue.task_done()
