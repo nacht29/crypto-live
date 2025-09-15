@@ -31,7 +31,7 @@ def create_boto3_session(profile, region) -> boto3.session:
 
 async def websocket_ingest(client:AsyncClient, streams:List, raw_queue:asyncio.Queue):
 	# create Binance Socket Manager client
-	bm = BinanceSocketManager(client, testnet=True)
+	bm = BinanceSocketManager(client)
 
 	async with bm.multiplex_socket(streams) as socket:
 		while True:
@@ -134,7 +134,7 @@ async def main():
 	streams = secret['streams']
 
 	# create async client
-	client = await AsyncClient.create(testnet=True)
+	client = await AsyncClient.create()
 
 	# create async queues
 	raw_queue = asyncio.Queue(maxsize=10000)
