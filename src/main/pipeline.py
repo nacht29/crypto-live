@@ -134,7 +134,7 @@ async def main():
 	streams = secret['streams']
 
 	# create async client
-	client = await AsyncClient.create()
+	client = await AsyncClient.create(testnet=True)
 
 	# create async queues
 	raw_queue = asyncio.Queue(maxsize=10000)
