@@ -115,6 +115,7 @@ async def write_to_s3(session, batch_queue:asyncio.Queue, bucket:str, bucket_dir
 				s3_client.put_object,
 				Bucket=bucket,
 				Key=file_key,
+				Body=file_body,
 				**extra,
 			)
 

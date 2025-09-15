@@ -1,0 +1,24 @@
+{
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Sid": "GlueCatalogReadWrite",
+			"Effect": "Allow",
+			"Action": [
+				"glue:GetDatabase",
+				"glue:GetDatabases",
+				"glue:GetTable",
+				"glue:GetTables",
+				"glue:GetPartition",
+				"glue:GetPartitions",
+				"glue:BatchGetPartition",
+				"glue:CreateTable"
+			],
+			"Resource": [
+				"arn:aws:glue:ap-southeast-1:068561046254:catalog",
+				"arn:aws:glue:ap-southeast-1:068561046254:database/crypto_live_db",
+				"arn:aws:glue:ap-southeast-1:068561046254:table/crypto_live_db/*"
+			]
+		}
+	]
+}
