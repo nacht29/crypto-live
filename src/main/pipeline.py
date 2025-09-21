@@ -15,8 +15,8 @@ BUCKET = "crypto-live-bucket"
 BATCH_JSONL_BUCKET_DIR = "batch_jsonl"
 
 # Processing
-MAX_BATCH_SIZE = 5 # change to 5000 for prod
-MAX_BATCH_TIMEOUT = 2 # wait 2 seconds for input or force flush (batch)
+MAX_BATCH_SIZE = 1000 # change to 5000 for prod
+MAX_BATCH_TIMEOUT = 10 # wait 2 seconds for input or force flush (batch)
 BATCH_JSONL_FILES = "/mnt/c/Users/Asus/Desktop/crypto-live/batch_json"
 
 # create boto3 session
@@ -37,7 +37,7 @@ async def websocket_ingest(client:AsyncClient, streams:List, raw_queue:asyncio.Q
 		while True:
 			stream_data = await socket.recv()
 			formatted_data = format_stream_data(stream_data)
-			print(formatted_data)
+			# print(formatted_data)
 			await raw_queue.put(formatted_data)
 
 async def batch_data(raw_queue:asyncio.Queue, batch_queue:asyncio.Queue, max_batch:int, max_timeout:int):
@@ -51,7 +51,8 @@ async def batch_data(raw_queue:asyncio.Queue, batch_queue:asyncio.Queue, max_bat
 		nonlocal buffer, last_flush
 		# reset flush time if buffer is empty
 		if not buffer:
-			last_flush = loop.time
+			last_flush = loop.time()
+			return
 		# batch data
 		await batch_queue.put(buffer)
 		# reset flush state
@@ -75,7 +76,7 @@ async def batch_data(raw_queue:asyncio.Queue, batch_queue:asyncio.Queue, max_bat
 				await flush()
 		
 		# no message arrived within flush window
-		except Exception as error:
+		except asyncio.TimeoutError as error:
 			await flush()
 
 async def write_to_s3(session, batch_queue:asyncio.Queue, bucket:str, bucket_dir:str, filename:str, gzip:bool=True, sse:str | None  = None, sse_kms_key_id:str | None = None):
@@ -134,7 +135,7 @@ async def main():
 	streams = secret['streams']
 
 	# create async client
-	client = await AsyncClient.create()
+	client = await AsyncClient.create(testnet=True)
 
 	# create async queues
 	raw_queue = asyncio.Queue(maxsize=10000)
@@ -142,6 +143,7 @@ async def main():
 
 	# orchestration
 	try:
+		print(f"{datetime.now()} Init tasks")
 		# create tasks
 		ingest = asyncio.create_task(websocket_ingest(client=client, streams=streams, raw_queue=raw_queue))
 		batch = asyncio.create_task(batch_data(raw_queue, batch_queue, max_batch=MAX_BATCH_SIZE, max_timeout=MAX_BATCH_TIMEOUT))
@@ -162,6 +164,7 @@ async def main():
 		for task in tasks:
 			task.cancel()
 
+		print(f"{datetime.now()} Exec tasks")
 		# run tasks concurrently
 		await asyncio.gather(ingest, batch, write)
 
