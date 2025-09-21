@@ -64,6 +64,8 @@ def format_stream_data(stream_data:Dict):
 	try:
 		format_data = {
 			'event_type': data['e'],
+			'event_time': data['E'],
+			'stream': stream,
 			'symbol': data['s'],
 			'close_price': data['c'],
 			'open_price': data['o'],
