@@ -52,6 +52,7 @@ async def batch_data(raw_queue:asyncio.Queue, batch_queue:asyncio.Queue, max_bat
 		# reset flush time if buffer is empty
 		if not buffer:
 			last_flush = loop.time()
+			return
 		# batch data
 		await batch_queue.put(buffer)
 		# reset flush state
@@ -75,7 +76,8 @@ async def batch_data(raw_queue:asyncio.Queue, batch_queue:asyncio.Queue, max_bat
 				await flush()
 		
 		# no message arrived within flush window
-		except Exception as error:
+		except asyncio.TimeoutError as error:
+			print(f"{datetime.now()} Failed to bathc data\n\n{error}")
 			await flush()
 
 async def write_to_s3(session, batch_queue:asyncio.Queue, bucket:str, bucket_dir:str, filename:str, gzip:bool=True, sse:str | None  = None, sse_kms_key_id:str | None = None):
