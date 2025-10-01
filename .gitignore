@@ -213,6 +213,7 @@ __marimo__/
 # python
 myvenv/
 diagram.py
+test.py
 
 # access keys
 access_key.txt

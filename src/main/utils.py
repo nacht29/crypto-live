@@ -1,8 +1,8 @@
 import io
 import json
 import gzip
-from typing import *
 from datetime import datetime
+from decimal import Decimal
 from typing import *
 
 # ===================
@@ -11,7 +11,7 @@ from typing import *
 
 # retrieve secret from Secrets Manager
 # get the stream symbol for each coin for miniTicker stream 
-def get_secret(session, secret_name:str, region_name:str, profile_name:str) -> Dict:
+def get_secret(session, secret_name:str, region_name:str, profile_name:str) -> dict:
 	secret_name = secret_name
 	region_name = region_name
 
@@ -52,20 +52,47 @@ def gzip_file(data:bytes) -> bytes:
 
 	return gzip_buffer.getvalue()
 
+# ==================
+# = DynamoDB Utils =
+# ==================
+
+# converts numerical string to decimal from websocket data
+def format_dynamo_data(object:dict) -> dict:
+	formatted_object = {}
+
+	for key, value in object.items():
+		# replace('.', '', 1) -> only replaces one decimal point '.'
+		# valid decimals only have one '.'
+		if key == 'event_time':
+			formatted_object[key] = value
+			# divide by 1000 to convert UNIX ms to seconds
+			# convert UNIX seconds to timestamp
+			iso_timestamp = datetime.utcfromtimestamp(value / 1000)
+			# convert datetime to string (DynamoDB cannot accept datetime object)
+			formatted_object['iso_timestamp'] = iso_timestamp.strftime("%Y-%m-%dT%H-%M-%s.%fZ")
+		elif isinstance(value, str) and value.replace('.', '', 1).isdigit():
+			formatted_object[key] = Decimal(value)
+		else:
+			formatted_object[key] = value
+
+	return formatted_object
+
 # =====================
 # = Utility functions =
 # =====================
 
 # make stream data more readable
-def format_stream_data(stream_data:Dict):
-	stream = stream_data['stream']
+def format_stream_data(stream_data:dict) -> dict:
+	stream_type = stream_data.get('stream_type') or stream_data.get('stream')
+	if stream_type is None:
+		raise KeyError('stream_type')
 	data = stream_data['data']
 
 	try:
 		format_data = {
 			'event_type': data['e'],
 			'event_time': data['E'],
-			'stream': stream,
+			'stream_type': stream_type,
 			'symbol': data['s'],
 			'close_price': data['c'],
 			'open_price': data['o'],
@@ -79,3 +106,4 @@ def format_stream_data(stream_data:Dict):
 		raise
 	
 	return format_data
+
