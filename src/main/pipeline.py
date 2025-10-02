@@ -137,7 +137,7 @@ async def write_to_dynamodb(session, raw_queue:asyncio.Queue, concurrency:int=20
 						ExpressionAttributeValues=values
 					)
 
-					print(f"{datetime.now()} Wrote {len(formatted_data)} rows to DynamodDB.")
+					print(f"{datetime.now()} Wrote 1 row to DynamodDB.")
 
 			finally:
 				raw_queue.task_done()
