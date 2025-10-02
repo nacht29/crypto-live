@@ -32,54 +32,34 @@ def get_secret(session, secret_name:str, region_name:str, profile_name:str) -> d
 	secret = get_secret_value_response['SecretString']
 	return json.loads(secret)
 
-# ===============
-# = S3 functions=
-# ===============
-def write_jsonl_bytes(batch_data:list[dict]) -> bytes:
-	jsonl_buffer = io.BytesIO()
+# ===========================
+# = Raw data transformation =
+# ===========================
 
-	for row in batch_data:
-		jsonl_buffer.write(json.dumps(row, separators=[",", ":"]).encode("utf-8"))
-		jsonl_buffer.write(b"\n")
+# process numeric and datetime values
+def process_dt_numeric(object:dict, dt_type:str='dt', numeric_str:str='num') -> dict:
+	if dt_type not in ['str', 'dt'] or numeric_str not in ['str', 'num']:
+		raise ValueError("Invalid dt_type. Only accept 'dt' for type <datetime> and 'str' for type <str>")
+	if numeric_str not in ['str', 'num']:
+		raise ValueError("Invalid dt_type. Only accept 'num' for type <int> or type <Decimal> and 'str' for type <str>")
 
-	return jsonl_buffer.getvalue()
-
-def gzip_file(data:bytes) -> bytes:
-	gzip_buffer = io.BytesIO()
-
-	with gzip.GzipFile(fileobj=gzip_buffer, mode='wb') as open_buffer:
-		open_buffer.write(data)
-
-	return gzip_buffer.getvalue()
-
-# ==================
-# = DynamoDB Utils =
-# ==================
-
-# converts numerical string to decimal from websocket data
-def format_dynamo_data(object:dict) -> dict:
-	formatted_object = {}
+	out_object = {}
 
 	for key, value in object.items():
-		# replace('.', '', 1) -> only replaces one decimal point '.'
-		# valid decimals only have one '.'
 		if key == 'event_time':
-			formatted_object[key] = value
-			# divide by 1000 to convert UNIX ms to seconds
-			# convert UNIX seconds to timestamp
+			out_object[key] = value
 			iso_timestamp = datetime.utcfromtimestamp(value / 1000)
-			# convert datetime to string (DynamoDB cannot accept datetime object)
-			formatted_object['iso_timestamp'] = iso_timestamp.strftime("%Y-%m-%dT%H-%M-%s.%fZ")
-		elif isinstance(value, str) and value.replace('.', '', 1).isdigit():
-			formatted_object[key] = Decimal(value)
+			if dt_type == 'str':
+				out_object['iso_timestamp'] = iso_timestamp.strftime("%Y-%m-%dT%H-%M-%s.%fZ")
+			else:
+				out_object['iso_timestamp'] = iso_timestamp
+		elif numeric_str == 'num' and isinstance(object[key], str) and value.replace('.', '', 1).isdigit():
+			out_object[key] = Decimal(value)
+			continue
 		else:
-			formatted_object[key] = value
+			out_object[key] = value
 
-	return formatted_object
-
-# =====================
-# = Utility functions =
-# =====================
+	return out_object
 
 # make stream data more readable
 def format_stream_data(stream_data:dict) -> dict:
@@ -107,3 +87,22 @@ def format_stream_data(stream_data:dict) -> dict:
 	
 	return format_data
 
+# ===============
+# = S3 functions=
+# ===============
+def write_jsonl_bytes(batch_data:list[dict]) -> bytes:
+	jsonl_buffer = io.BytesIO()
+
+	for row in batch_data:
+		jsonl_buffer.write(json.dumps(row, separators=[",", ":"]).encode("utf-8"))
+		jsonl_buffer.write(b"\n")
+
+	return jsonl_buffer.getvalue()
+
+def gzip_file(data:bytes) -> bytes:
+	gzip_buffer = io.BytesIO()
+
+	with gzip.GzipFile(fileobj=gzip_buffer, mode='wb') as open_buffer:
+		open_buffer.write(data)
+
+	return gzip_buffer.getvalue()

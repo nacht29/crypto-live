@@ -21,7 +21,7 @@ MAX_BATCH_TIMEOUT = 10 # wait 2 seconds for input or force flush (batch)
 BATCH_JSONL_FILES = "/mnt/c/Users/Asus/Desktop/crypto-live/batch_json"
 
 # DynamoDB
-RETENTION_TTL_DAYS = 90
+RETENTION_TTL_DAYS = 1
 TABLE_NAME = "crypto-live-miniticker"
 
 # create boto3 session
@@ -44,7 +44,7 @@ async def websocket_ingest(client:AsyncClient, streams:List, dynamo_raw_queue:as
 			formatted_data = format_stream_data(stream_data)
 			# print(formatted_data)
 			await dynamo_raw_queue.put(formatted_data)
-			await s3_raw_queue.put(formatted_data)
+			await s3_raw_queue.put(process_dt_numeric(formatted_data, dt_type='str', numeric_str='str'))
 
 async def batch_data(raw_queue:asyncio.Queue, batch_queue:asyncio.Queue, max_batch:int, max_timeout:int):
 	buffer = []
@@ -94,7 +94,7 @@ async def write_to_dynamodb(session, raw_queue:asyncio.Queue, concurrency:int=20
 		while True:
 			raw = await raw_queue.get()
 			try:
-				formatted_data = format_dynamo_data(raw)
+				formatted_data = process_dt_numeric(raw, dt_type='str', numeric_str='num')
 				expression = [
 					"event_type = :E",
 					"event_time = :e",
@@ -189,7 +189,7 @@ async def write_to_s3(session, batch_queue:asyncio.Queue, bucket:str, bucket_dir
 			)
 
 			# logging
-			print(f"Uploaded {filename.removesuffix(".jsonl")}-{timestamp}.jsonl")
+			print(f"{datetime.now()} Uploaded {filename.removesuffix(".jsonl")}-{timestamp}.jsonl")
 
 		finally:
 			batch_queue.task_done()
@@ -248,4 +248,4 @@ async def main(load_s3:bool=True, load_dynamod:bool=True):
 		await client.close_connection()
 
 if __name__ == '__main__':
-	asyncio.run(main(load_s3=False, load_dynamod=True))
+	asyncio.run(main(load_s3=True, load_dynamod=True))
