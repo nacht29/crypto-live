@@ -17,7 +17,11 @@ BATCH_JSONL_BUCKET_DIR = "batch_jsonl"
 
 # Processing
 MAX_BATCH_SIZE = 1000 # change to 5000 for prod
+<<<<<<< HEAD
 MAX_BATCH_TIMEOUT = 10 # wait 2 seconds for input or force flush (batch)
+=======
+MAX_BATCH_TIMEOUT = 3 # wait 2 seconds for input or force flush (batch)
+>>>>>>> 5b02d62c7bc25ce2a6aadeeb48965b7c75816ccb
 BATCH_JSONL_FILES = "/mnt/c/Users/Asus/Desktop/crypto-live/batch_json"
 
 # DynamoDB
