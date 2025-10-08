@@ -20,7 +20,7 @@ MAX_BATCH_SIZE = 1000 # change to 5000 for prod
 MAX_BATCH_TIMEOUT = 10 # wait 2 seconds for input or force flush (batch)
 
 # DynamoDB
-RETENTION_TTL_DAYS = 1
+RETENTION_TTL_DAYS = 1.5
 TABLE_NAME = "crypto-live-miniticker"
 
 # create boto3 session
@@ -120,7 +120,8 @@ async def write_to_dynamodb(session, raw_queue:asyncio.Queue, concurrency:int=20
 				}
 
 				if ttl_days is not None:
-					values[':ttl_days'] = int(time()) + ttl_days*24*360
+					# converts days to minutes
+					values[':ttl_days'] = int(time()) + ttl_days * 24 * 360
 					expression.append("ttl_days = :ttl_days")
 
 				update_expression = "SET " + ", ".join(expression)
