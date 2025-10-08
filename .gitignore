@@ -230,3 +230,5 @@ aws_crypto_pipeline_prompt.md
 ref/*
 test*
 batch_json*
+dependencies.sh
+makefile.sh
