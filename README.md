@@ -20,7 +20,7 @@ pipeline container, DynamoDB, S3, Glue, and the visualisation layer. -->
 | `src/main/pipeline.py` | Orchestrates websocket ingestion, batching, and writes to DynamoDB and S3. |
 | `src/main/utils.py` | Helper utilities for AWS Secrets Manager, numeric/date conversion, and file helpers. |
 | `src/glue/parquet.py` | AWS Glue job that loads raw JSONL batches and writes partitioned Parquet to S3. |
-| `set-up/requirements.txt.sh` | List of Python code  dependencies to be installed via `pip`. |
+| `set-up/requirements.txt` | List of Python code  dependencies to be installed via `pip`. |
 | `permissions/*` | IAM inline policy in JSON for the service roles needed for the pipeline. |
 
 ---
