@@ -223,6 +223,7 @@ secrets/.
 # permission config
 GlueCatalogRead.json
 S3ReadWrite.json
+**/GlueServiceRole-crypto-live/**
 
 # vscode
 *workspace
