@@ -220,6 +220,10 @@ access_key.txt
 secrets/*
 secrets/.
 
+# permission config
+GlueCatalogRead.json
+S3ReadWrite.json
+
 # vscode
 *workspace
 .vscode
