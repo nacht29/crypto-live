@@ -168,7 +168,7 @@ async def write_to_s3(session, batch_queue:asyncio.Queue, bucket:str, bucket_dir
 
 			#  file config
 			timestamp = datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
-			file_key = f"{bucket_dir}/{filename.removesuffix(".jsonl")}-{timestamp}.jsonl" # file name
+			file_key = f"{bucket_dir}/{filename.removesuffix('.jsonl')}-{timestamp}.jsonl" # file name
 			
 			extra = {}
 			if gzip:
@@ -189,7 +189,7 @@ async def write_to_s3(session, batch_queue:asyncio.Queue, bucket:str, bucket_dir
 			)
 
 			# logging
-			print(f"{datetime.now()} Uploaded {filename.removesuffix(".jsonl")}-{timestamp}.jsonl")
+			print(f"{datetime.now()} Uploaded {filename.removesuffix('.jsonl')}-{timestamp}.jsonl")
 
 		finally:
 			batch_queue.task_done()
