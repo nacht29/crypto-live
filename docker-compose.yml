@@ -1,0 +1,8 @@
+services:
+  pipeline:
+    image: nacht29/crypto-live:latest
+    container_name: crypto-live
+    # env_file: .env         # keep your real .env alongside the compose file
+    volumes:
+      - ${HOME}/.aws:/root/.aws:ro
+    # command: python src/main/pipeline.py
