@@ -11,9 +11,9 @@ from utils import *
 # AWS constants
 REGION = "ap-southeast-1"
 PIPELINE_IAM_USER = "crypto-live-pipeline01"
-BINANCE_WEBSOCKET_SECRET_NAME = "crypto-live.binance_ws"
 BUCKET = "crypto-live-bucket"
 BATCH_JSONL_BUCKET_DIR = "batch_jsonl"
+BINANCE_WEBSOCKET_SECRET_NAME = "crypto-live.binance_ws"
 
 # Processing
 MAX_BATCH_SIZE = 1000 # change to 5000 for prod
@@ -24,14 +24,14 @@ RETENTION_TTL_DAYS = 1
 TABLE_NAME = "crypto-live-miniticker"
 
 # create boto3 session
-def create_boto3_session(profile, region) -> boto3.session:
+def create_boto3_session(profile:str=None, region:str=None) -> boto3.session:
 	try:
-		session = boto3.session.Session(profile_name=profile, region_name=region)
+		if profile:
+			return boto3.session.Session(profile_name=profile, region_name=region)
+		return boto3.session.Session(region_name=region)
 	except Exception as error:
 		print(f"Failed to create boto3 session.\n\n{error}")
 		raise
-
-	return session
 
 async def websocket_ingest(client:AsyncClient, streams:List, dynamo_raw_queue:asyncio.Queue, s3_raw_queue:asyncio.Queue):
 	# create Binance Socket Manager client
@@ -196,7 +196,7 @@ async def write_to_s3(session, batch_queue:asyncio.Queue, bucket:str, bucket_dir
 
 async def main(load_s3:bool=True, load_dynamod:bool=True):
 	# create boto3_session
-	session = create_boto3_session(profile=PIPELINE_IAM_USER, region=REGION)
+	session = create_boto3_session(region=REGION)
 
 	# retrieve secret as JSON str and load into dict
 	secret = get_secret(session, BINANCE_WEBSOCKET_SECRET_NAME, REGION, PIPELINE_IAM_USER)
