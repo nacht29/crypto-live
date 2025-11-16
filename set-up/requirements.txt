@@ -1,4 +1,3 @@
 boto3
 python-binance
-pyspark
 colorama
