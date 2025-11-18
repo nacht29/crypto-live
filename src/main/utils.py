@@ -11,7 +11,7 @@ from typing import *
 
 # retrieve secret from Secrets Manager
 # get the stream symbol for each coin for miniTicker stream 
-def get_secret(session, secret_name:str, region_name:str, profile_name:str) -> dict:
+def get_secret(session, secret_name:str, region_name:str) -> dict:
 	secret_name = secret_name
 	region_name = region_name
 

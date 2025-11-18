@@ -1,3 +1,4 @@
+import os
 import signal
 import asyncio
 import boto3
@@ -9,19 +10,33 @@ from typing import *
 from utils import *
 
 # AWS constants
-REGION = "ap-southeast-1"
-PIPELINE_IAM_USER = "crypto-live-pipeline01"
-BUCKET = "crypto-live-bucket"
-BATCH_JSONL_BUCKET_DIR = "batch_jsonl"
-BINANCE_WEBSOCKET_SECRET_NAME = "crypto-live.binance_ws"
+REGION = os.getenv("REGION", "ap-southeast-1")
+PIPELINE_IAM_USER = os.getenv("PIPELINE_IAM_USER", "crypto-live-pipeline01")
+BUCKET = os.getenv("BUCKET", "crypto-live-bucket")
+BATCH_JSONL_BUCKET_DIR = os.getenv("BATCH_JSONL_BUCKET_DIR", "batch_jsonl")
+BINANCE_WEBSOCKET_SECRET_NAME = os.getenv("BINANCE_WEBSOCKET_SECRET_NAME", "crypto-live.binance_ws")
 
 # Processing
-MAX_BATCH_SIZE = 1000 # change to 5000 for prod
-MAX_BATCH_TIMEOUT = 10 # wait 2 seconds for input or force flush (batch)
+try:
+	MAX_BATCH_SIZE = int(os.getenv("MAX_BATCH_SIZE", "1000"))
+except ValueError:
+	print(f"Invalid MAX_BATCH_SIZE")
+	raise(ValueError)
+
+try:
+	MAX_BATCH_TIMEOUT = int(os.getenv("MAX_BATCH_TIMEOUT", "10")) # wait n seconds for input or force flush (batch)
+except ValueError:
+	print(f"Invalid MAX_BATCH_TIMEOUT")
+	raise(ValueError)
 
 # DynamoDB
-RETENTION_TTL_DAYS = 1
-TABLE_NAME = "crypto-live-miniticker"
+try:
+	RETENTION_TTL_DAYS = int(os.getenv("RETENTION_TTL_DAYS", 1))
+except ValueError:
+	print("Invalid TTL")
+	raise(ValueError)
+
+TABLE_NAME = os.getenv("TABLE_NAME", "crypto-live-miniticker")
 
 # create boto3 session
 def create_boto3_session(profile:str=None, region:str=None) -> boto3.session:
@@ -199,11 +214,11 @@ async def main(load_s3:bool=True, load_dynamod:bool=True):
 	session = create_boto3_session(region=REGION)
 
 	# retrieve secret as JSON str and load into dict
-	secret = get_secret(session, BINANCE_WEBSOCKET_SECRET_NAME, REGION, PIPELINE_IAM_USER)
+	secret = get_secret(session, BINANCE_WEBSOCKET_SECRET_NAME, REGION)
 	streams = secret['streams']
 
 	# create async client
-	client = await AsyncClient.create(testnet=True)
+	client = await AsyncClient.create(testnet=False)
 
 	# create async queues
 	dynamo_raw_queue = asyncio.Queue(maxsize=10000)
@@ -242,7 +257,11 @@ async def main(load_s3:bool=True, load_dynamod:bool=True):
 		print(f"{datetime.now()} Exec tasks")
 
 		# run tasks concurrently
-		await asyncio.gather(*tasks)
+		# catches and resolves Ctrl + C before exiting 
+		try:
+			await asyncio.gather(*tasks)
+		except asyncio.CancelledError:
+			pass
 
 	finally:
 		await client.close_connection()
