@@ -9,7 +9,15 @@
 				"ecr:DescribeRepositories",
 				"ecr:DeleteRepository",
 				"ecr:PutLifecyclePolicy",
-				"ecr:GetLifecyclePolicy"
+				"ecr:GetLifecyclePolicy",
+				"ecr:BatchCheckLayerAvailability",
+				"ecr:BatchGetImage",
+				"ecr:DescribeImages",
+				"ecr:GetDownloadUrlForLayer",
+				"ecr:InitiateLayerUpload",
+				"ecr:UploadLayerPart",
+				"ecr:CompleteLayerUpload",
+				"ecr:PutImage"
 			],
 			"Resource": "arn:aws:ecr:ap-southeast-1:068561046254:repository/crypto-live"
 		},
@@ -18,7 +26,8 @@
 			"Action": [
 				"ecr:GetAuthorizationToken"
 			],
-			"Resource": "arn:aws:ecr:ap-southeast-1:068561046254:repository/crypto-live"
+			"Resource": "*"
 		}
 	]
 }
+
