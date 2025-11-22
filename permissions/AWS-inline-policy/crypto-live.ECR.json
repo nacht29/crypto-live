@@ -1,0 +1,24 @@
+{
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Sid": "CryptoLiveAllowECR",
+			"Effect": "Allow",
+			"Action": [
+				"ecr:CreateRepository",
+				"ecr:DescribeRepositories",
+				"ecr:DeleteRepository",
+				"ecr:PutLifecyclePolicy",
+				"ecr:GetLifecyclePolicy"
+			],
+			"Resource": "arn:aws:ecr:ap-southeast-1:068561046254:repository/crypto-live"
+		},
+		{
+			"Effect": "Allow",
+			"Action": [
+				"ecr:GetAuthorizationToken"
+			],
+			"Resource": "arn:aws:ecr:ap-southeast-1:068561046254:repository/crypto-live"
+		}
+	]
+}
