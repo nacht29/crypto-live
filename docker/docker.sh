@@ -8,9 +8,9 @@ sudo docker push nacht29/crypto-live:latest
 # run image
 # can be done with 2 options
 sudo docker run --rm -it \
-  -e AWS_PROFILE=crypto-live-pipeline01 \
-  -v /home/nacht29/.aws/config:/root/.aws/config:ro \
-  -v /home/nacht29/.aws/credentials:/root/.aws/credentials:ro \
-  crypto-live
+	-e AWS_PROFILE=crypto-live-pipeline01 \
+	-v /home/nacht29/.aws/config:/root/.aws/config:ro \
+	-v /home/nacht29/.aws/credentials:/root/.aws/credentials:ro \
+	crypto-live
 
 sudo docker compose up .

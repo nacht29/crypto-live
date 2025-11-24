@@ -1,3 +1,9 @@
+### Build image
+```bash
+export DOCKER_BUILDKIT=1
+docker build -t crypto-live .
+```
+
 ### Create ECR repo
 ```bash
 aws --profile crypto-live-ECS ecr create-repository --repository-name crypto-live
@@ -24,9 +30,10 @@ On success, you will see this payload:
 }
 ```
 
-#### Get account ID
-aws --profile crypto-live-ECS sts get-caller-identity --query Account --output text
-068561046254
+### Get account ID
+```bash
+aws --profile crypto-live-ECS sts get-caller-identity --query Account --output text 068561046254
+```
 
 ### AWS ECR log-in
 
@@ -39,4 +46,11 @@ aws --profile crypto-live-ECS ecr get-login-password --region ap-southeast-1 | d
 ``` bash
 docker tag crypto-live:latest 068561046254.dkr.ecr.ap-southeast-1.amazonaws.com/crypto-live:latest
 docker push 068561046254.dkr.ecr.ap-southeast-1.amazonaws.com/crypto-live:latest
+```
+
+### BuildX error
+
+```bash
+sudo apt-get update
+sudo apt-get install docker-buildx-plugin docker-compose-plugin
 ```
