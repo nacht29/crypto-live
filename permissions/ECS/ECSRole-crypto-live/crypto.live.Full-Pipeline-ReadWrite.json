@@ -1,0 +1,46 @@
+{
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Sid": "ECSRoleDynamoDBReadWrite",
+			"Effect": "Allow",
+			"Action": [
+				"dynamodb:BatchWriteItem",
+				"dynamodb:PutItem",
+				"dynamodb:ListTables",
+				"dynamodb:DeleteItem",
+				"dynamodb:UpdateItem"
+			],
+			"Resource": "arn:aws:dynamodb:ap-southeast-1:068561046254:table/crypto-live-miniticker"
+		},
+	{
+			"Sid": "ECSRoleS3ReadWrite",
+			"Effect": "Allow",
+			"Action": [
+				"s3:PutObject",
+				"s3:ListBucket"
+			],
+			"Resource": "arn:aws:s3:::crypto-live-bucket/*"
+		},
+		{
+			"Sid": "ECSRoleCryptoLiveReadBinanceWSSecret",
+			"Effect": "Allow",
+			"Action": [
+				"secretsmanager:GetSecretValue",
+				"secretsmanager:DescribeSecret"
+			],
+			"Resource": "arn:aws:secretsmanager:ap-southeast-1:068561046254:secret:crypto-live.binance_ws-*"
+		},
+		{
+			"Sid": "ECSRoleECR",
+			"Effect": "Allow",
+			"Action": [
+				"ecr:GetAuthorizationToken",
+				"ecr:BatchCheckLayerAvailability",
+				"ecr:GetDownloadUrlForLayer",
+				"ecr:BatchGetImage"
+			],
+			"Resource": "arn:aws:ecs:ap-southeast-1:068561046254:cluster/*"
+		}
+	]
+}
