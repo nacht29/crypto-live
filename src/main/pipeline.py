@@ -231,7 +231,7 @@ async def main(load_s3:bool=True, load_dynamod:bool=True):
 	# orchestration
 	try:
 		print(f"{datetime.now()} Init tasks")
-	
+
 		# create tasks
 		ingest = asyncio.create_task(websocket_ingest(client=client, streams=streams, dynamo_raw_queue=dynamo_raw_queue, s3_raw_queue=s3_raw_queue))
 		batch = asyncio.create_task(batch_data(s3_raw_queue, batch_queue, max_batch=MAX_BATCH_SIZE, max_timeout=MAX_BATCH_TIMEOUT))
