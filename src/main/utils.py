@@ -11,13 +11,13 @@ from typing import *
 
 # retrieve secret from Secrets Manager
 # get the stream symbol for each coin for miniTicker stream 
-def get_secret(session, secret_name:str, region_name:str, profile_name:str) -> dict:
+def get_secret(session, secret_name:str, region_name:str) -> dict:
 	secret_name = secret_name
 	region_name = region_name
 
 	# create a Secrets Manager client
 	try:
-		client = session.client(service_name='secretsmanager',region_name=region_name)
+		client = session.client(service_name='secretsmanager', region_name=region_name)
 	except Exception as error:
 		print(f"Failed to create boto3 session for Secrets Manager.\n\n{error}")
 		raise
@@ -41,7 +41,7 @@ def process_dt_numeric(object:dict, dt_type:str='dt', numeric_str:str='num') -> 
 	if dt_type not in ['str', 'dt'] or numeric_str not in ['str', 'num']:
 		raise ValueError("Invalid dt_type. Only accept 'dt' for type <datetime> and 'str' for type <str>")
 	if numeric_str not in ['str', 'num']:
-		raise ValueError("Invalid dt_type. Only accept 'num' for type <int> or type <Decimal> and 'str' for type <str>")
+		raise ValueError("Invalid numeric_str. Only accept 'num' for type <int> or type <Decimal> and 'str' for type <str>")
 
 	out_object = {}
 
@@ -50,7 +50,7 @@ def process_dt_numeric(object:dict, dt_type:str='dt', numeric_str:str='num') -> 
 			out_object[key] = value
 			iso_timestamp = datetime.utcfromtimestamp(value / 1000)
 			if dt_type == 'str':
-				out_object['iso_timestamp'] = iso_timestamp.strftime("%Y-%m-%dT%H-%M-%s.%fZ")
+				out_object['iso_timestamp'] = iso_timestamp.strftime("%Y-%m-%dT%H-%M-%S.%fZ")
 			else:
 				out_object['iso_timestamp'] = iso_timestamp
 		elif numeric_str == 'num' and isinstance(object[key], str) and value.replace('.', '', 1).isdigit():

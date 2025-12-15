@@ -1,0 +1,10 @@
+services:
+  pipeline:
+    image: nacht29/crypto-live:latest
+    container_name: crypto-live
+    env_file: .env         # keep your real .env alongside the compose file
+    environment:
+      AWS_PROFILE: ${AWS_PROFILE}
+    volumes:
+      - ${HOST_AWS_DIR}:/root/.aws:ro
+    command: python src/main/pipeline.py

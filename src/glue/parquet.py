@@ -25,7 +25,10 @@ datasink = glueContext.write_dynamic_frame.from_options(
 	connection_type="s3",
 	connection_options={
 		"path": "s3://crypto-live-bucket/parquet/",
-		"partitionKeys": ["stream", "symbol"]
+		"partitionKeys": [
+            "stream_type"
+            # "symbol"
+		]
 	},
 	format="parquet",
 	format_options={"compression": "snappy"}

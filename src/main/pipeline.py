@@ -1,3 +1,4 @@
+import os
 import signal
 import asyncio
 import boto3
@@ -9,30 +10,46 @@ from typing import *
 from utils import *
 
 # AWS constants
-REGION = "ap-southeast-1"
-PIPELINE_IAM_USER = "crypto-live-pipeline01"
-BINANCE_WEBSOCKET_SECRET_NAME = "crypto-live.binance_ws"
-BUCKET = "crypto-live-bucket"
-BATCH_JSONL_BUCKET_DIR = "batch_jsonl"
+PIPELINE_IAM_USER = os.getenv("PIPELINE_IAM_USER", "")
+REGION = os.getenv("REGION", "ap-southeast-1")
+BUCKET = os.getenv("BUCKET", "crypto-live-bucket")
+BATCH_JSONL_BUCKET_DIR = os.getenv("BATCH_JSONL_BUCKET_DIR", "batch_jsonl")
+BINANCE_WEBSOCKET_SECRET_NAME = os.getenv("BINANCE_WEBSOCKET_SECRET_NAME", "crypto-live.binance_ws")
 
 # Processing
-MAX_BATCH_SIZE = 1000 # change to 5000 for prod
-MAX_BATCH_TIMEOUT = 10 # wait 2 seconds for input or force flush (batch)
-BATCH_JSONL_FILES = "/mnt/c/Users/Asus/Desktop/crypto-live/batch_json"
+try:
+	MAX_BATCH_SIZE = int(os.getenv("MAX_BATCH_SIZE", "1000"))
+except ValueError:
+	print(f"Invalid MAX_BATCH_SIZE")
+	raise(ValueError)
+
+try:
+	MAX_BATCH_TIMEOUT = int(os.getenv("MAX_BATCH_TIMEOUT", "10")) # wait n seconds for input or force flush (batch)
+except ValueError:
+	print(f"Invalid MAX_BATCH_TIMEOUT")
+	raise(ValueError)
+
+# Async Client
+TESTNET = bool(os.getenv("TESTNET", True))
 
 # DynamoDB
-RETENTION_TTL_DAYS = 1
-TABLE_NAME = "crypto-live-miniticker"
+try:
+	RETENTION_TTL_DAYS = int(os.getenv("RETENTION_TTL_DAYS", 1))
+except ValueError:
+	print("Invalid TTL")
+	raise(ValueError)
+
+TABLE_NAME = os.getenv("TABLE_NAME", "crypto-live-miniticker")
 
 # create boto3 session
-def create_boto3_session(profile, region) -> boto3.session:
+def create_boto3_session(profile:str=None, region:str=None) -> boto3.session:
 	try:
-		session = boto3.session.Session(profile_name=profile, region_name=region)
+		if profile:
+			return boto3.session.Session(profile_name=profile, region_name=region)
+		return boto3.session.Session(region_name=region)
 	except Exception as error:
 		print(f"Failed to create boto3 session.\n\n{error}")
 		raise
-
-	return session
 
 async def websocket_ingest(client:AsyncClient, streams:List, dynamo_raw_queue:asyncio.Queue, s3_raw_queue:asyncio.Queue):
 	# create Binance Socket Manager client
@@ -121,7 +138,8 @@ async def write_to_dynamodb(session, raw_queue:asyncio.Queue, concurrency:int=20
 				}
 
 				if ttl_days is not None:
-					values[':ttl_days'] = int(time()) + ttl_days*24*360
+					# converts days to a TTL epoch timestamp (seconds)
+					values[':ttl_days'] = int(time() + ttl_days * 24 * 60 * 60)
 					expression.append("ttl_days = :ttl_days")
 
 				update_expression = "SET " + ", ".join(expression)
@@ -168,7 +186,7 @@ async def write_to_s3(session, batch_queue:asyncio.Queue, bucket:str, bucket_dir
 
 			#  file config
 			timestamp = datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
-			file_key = f"{bucket_dir}/{filename.removesuffix(".jsonl")}-{timestamp}.jsonl" # file name
+			file_key = f"{bucket_dir}/{filename.removesuffix('.jsonl')}-{timestamp}.jsonl" # file name
 			
 			extra = {}
 			if gzip:
@@ -189,7 +207,7 @@ async def write_to_s3(session, batch_queue:asyncio.Queue, bucket:str, bucket_dir
 			)
 
 			# logging
-			print(f"{datetime.now()} Uploaded {filename.removesuffix(".jsonl")}-{timestamp}.jsonl")
+			print(f"{datetime.now()} Uploaded {filename.removesuffix('.jsonl')}-{timestamp}.jsonl")
 
 		finally:
 			batch_queue.task_done()
@@ -199,11 +217,11 @@ async def main(load_s3:bool=True, load_dynamod:bool=True):
 	session = create_boto3_session(profile=PIPELINE_IAM_USER, region=REGION)
 
 	# retrieve secret as JSON str and load into dict
-	secret = get_secret(session, BINANCE_WEBSOCKET_SECRET_NAME, REGION, PIPELINE_IAM_USER)
+	secret = get_secret(session, BINANCE_WEBSOCKET_SECRET_NAME, REGION)
 	streams = secret['streams']
 
 	# create async client
-	client = await AsyncClient.create(testnet=True)
+	client = await AsyncClient.create(testnet=TESTNET)
 
 	# create async queues
 	dynamo_raw_queue = asyncio.Queue(maxsize=10000)
@@ -213,7 +231,7 @@ async def main(load_s3:bool=True, load_dynamod:bool=True):
 	# orchestration
 	try:
 		print(f"{datetime.now()} Init tasks")
-	
+
 		# create tasks
 		ingest = asyncio.create_task(websocket_ingest(client=client, streams=streams, dynamo_raw_queue=dynamo_raw_queue, s3_raw_queue=s3_raw_queue))
 		batch = asyncio.create_task(batch_data(s3_raw_queue, batch_queue, max_batch=MAX_BATCH_SIZE, max_timeout=MAX_BATCH_TIMEOUT))
@@ -242,7 +260,11 @@ async def main(load_s3:bool=True, load_dynamod:bool=True):
 		print(f"{datetime.now()} Exec tasks")
 
 		# run tasks concurrently
-		await asyncio.gather(*tasks)
+		# catches and resolves Ctrl + C before exiting 
+		try:
+			await asyncio.gather(*tasks)
+		except asyncio.CancelledError:
+			pass
 
 	finally:
 		await client.close_connection()
