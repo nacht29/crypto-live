@@ -238,3 +238,5 @@ test*
 batch_json*
 dependencies.sh
 makefile.sh
+*.zip
+aws/
