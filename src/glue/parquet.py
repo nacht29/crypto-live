@@ -16,7 +16,8 @@ job.commit()
 # Load JSONL from S3 (raw)
 datasource = glueContext.create_dynamic_frame.from_catalog(
 	database="crypto_live_db",
-	table_name="raw_batch_jsonl"
+	table_name="raw_batch_jsonl",
+    transformation_ctx="raw_jsonl"
 )
 
 # Convert to Parquet (with partitioning by dt/hour)
