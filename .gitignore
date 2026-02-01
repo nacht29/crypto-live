@@ -240,3 +240,4 @@ dependencies.sh
 makefile.sh
 *.zip
 aws/
+docker-compose.yml

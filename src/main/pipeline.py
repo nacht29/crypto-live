@@ -3,43 +3,41 @@ import signal
 import asyncio
 import boto3
 from binance import AsyncClient, BinanceSocketManager
-from typing import *
 from datetime import datetime
 from time import time
 from typing import *
 from utils import *
 
-# AWS constants
-PIPELINE_IAM_USER = os.getenv("PIPELINE_IAM_USER", "")
-REGION = os.getenv("REGION", "ap-southeast-1")
-BUCKET = os.getenv("BUCKET", "crypto-live-bucket")
-BATCH_JSONL_BUCKET_DIR = os.getenv("BATCH_JSONL_BUCKET_DIR", "batch_jsonl")
-BINANCE_WEBSOCKET_SECRET_NAME = os.getenv("BINANCE_WEBSOCKET_SECRET_NAME", "crypto-live.binance_ws")
+# AWS boto3 config
+PIPELINE_IAM_USER = os.getenv("PIPELINE_IAM_USER", "") # boto3 profile
+REGION = os.getenv("REGION", "ap-southeast-1") # AWS region
 
-# Processing
+# Data processing
 try:
-	MAX_BATCH_SIZE = int(os.getenv("MAX_BATCH_SIZE", "1000"))
+	MAX_BATCH_SIZE = int(os.getenv("MAX_BATCH_SIZE", "1000")) # Max size (rows) per microbatch
 except ValueError:
 	print(f"Invalid MAX_BATCH_SIZE")
 	raise(ValueError)
 
 try:
-	MAX_BATCH_TIMEOUT = int(os.getenv("MAX_BATCH_TIMEOUT", "10")) # wait n seconds for input or force flush (batch)
+	MAX_BATCH_TIMEOUT = int(os.getenv("MAX_BATCH_TIMEOUT", "10")) # Wait n seconds for input or force flush (batch)
 except ValueError:
 	print(f"Invalid MAX_BATCH_TIMEOUT")
 	raise(ValueError)
 
-# Async Client
-TESTNET = bool(os.getenv("TESTNET", True))
-
-# DynamoDB
+# AWS services
+S3_BUCKET = os.getenv("S3_BUCKET", "crypto-live-bucket") # S3 bucket
+S3_JSONL_DIR_PATH = os.getenv("S3_JSONL_DIR_PATH", "batch_jsonl") # S3 bucket directory path to store raw JSONL
+BINANCE_WEBSOCKET_SECRET = os.getenv("BINANCE_WEBSOCKET_SECRET", "crypto-live.binance_ws") # Secrets Manager - websocket url
+DYNAMO_TABLE_NAME = os.getenv("DYNAMO_TABLE_NAME", "crypto-live-miniticker") # DynamoDB table name
 try:
-	RETENTION_TTL_DAYS = int(os.getenv("RETENTION_TTL_DAYS", 1))
+	RETENTION_TTL_DAYS = int(os.getenv("RETENTION_TTL_DAYS", 1)) # Days to retent data in DynamoDB table
 except ValueError:
 	print("Invalid TTL")
 	raise(ValueError)
 
-TABLE_NAME = os.getenv("TABLE_NAME", "crypto-live-miniticker")
+# Async Client
+TESTNET = bool(os.getenv("TESTNET", True))
 
 # create boto3 session
 def create_boto3_session(profile:str=None, region:str=None) -> boto3.session:
@@ -97,14 +95,14 @@ async def batch_data(raw_queue:asyncio.Queue, batch_queue:asyncio.Queue, max_bat
 			# when max batch size is reached, flush the data (batching)
 			if len(buffer) >= max_batch or flush_window <= 0:
 				await flush()
-		
+
 		# no message arrived within flush window
 		except asyncio.TimeoutError as error:
 			await flush()
 
 async def write_to_dynamodb(session, raw_queue:asyncio.Queue, concurrency:int=20, ttl_days:int | None = None):
 	dynamo = session.resource(service_name="dynamodb")
-	table = dynamo.Table(TABLE_NAME)
+	table = dynamo.Table(DYNAMO_TABLE_NAME)
 	sem = asyncio.Semaphore(concurrency)
 
 	async def write():
@@ -159,7 +157,7 @@ async def write_to_dynamodb(session, raw_queue:asyncio.Queue, concurrency:int=20
 
 			finally:
 				raw_queue.task_done()
-	
+
 	# create parallet (concurrent) threads to write to DynamoDB
 	# global cap is set = concurrent so that no huge spikes occur
 	tasks = [asyncio.create_task(write()) for _ in range(concurrency)]
@@ -217,7 +215,7 @@ async def main(load_s3:bool=True, load_dynamod:bool=True):
 	session = create_boto3_session(profile=PIPELINE_IAM_USER, region=REGION)
 
 	# retrieve secret as JSON str and load into dict
-	secret = get_secret(session, BINANCE_WEBSOCKET_SECRET_NAME, REGION)
+	secret = get_secret(session, BINANCE_WEBSOCKET_SECRET, REGION)
 	streams = secret['streams']
 
 	# create async client
@@ -238,7 +236,7 @@ async def main(load_s3:bool=True, load_dynamod:bool=True):
 		tasks  = [ingest, batch]
 
 		if load_s3:
-			write_s3 = asyncio.create_task(write_to_s3(session, batch_queue, bucket=BUCKET, bucket_dir=BATCH_JSONL_BUCKET_DIR, filename="miniticker", gzip=True))
+			write_s3 = asyncio.create_task(write_to_s3(session, batch_queue, bucket=S3_BUCKET, bucket_dir=S3_JSONL_DIR_PATH, filename="miniticker", gzip=True))
 			tasks.append(write_s3)
 		if load_dynamod:
 			write_dynamod = asyncio.create_task(write_to_dynamodb(session, dynamo_raw_queue, ttl_days=RETENTION_TTL_DAYS))

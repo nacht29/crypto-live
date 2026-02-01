@@ -48,6 +48,7 @@ def process_dt_numeric(object:dict, dt_type:str='dt', numeric_str:str='num') -> 
 	for key, value in object.items():
 		if key == 'event_time':
 			out_object[key] = value
+			# convert epoch time (ms) to date time: e.g. 1700000000123 to 2023-11-14T22-13-20.123000 
 			iso_timestamp = datetime.utcfromtimestamp(value / 1000)
 			if dt_type == 'str':
 				out_object['iso_timestamp'] = iso_timestamp.strftime("%Y-%m-%dT%H-%M-%S.%fZ")
