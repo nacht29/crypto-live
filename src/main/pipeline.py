@@ -36,6 +36,9 @@ except ValueError:
 	print("Invalid TTL")
 	raise(ValueError)
 
+# Pipeline toggle
+S3_WRITE, DYNAMO_WRITE = pipeline_params()
+
 # Async Client
 TESTNET = bool(os.getenv("TESTNET", True))
 
@@ -210,7 +213,7 @@ async def write_to_s3(session, batch_queue:asyncio.Queue, bucket:str, bucket_dir
 		finally:
 			batch_queue.task_done()
 
-async def main(load_s3:bool=True, load_dynamod:bool=True):
+async def main():
 	# create boto3_session
 	session = create_boto3_session(profile=PIPELINE_IAM_USER, region=REGION)
 
@@ -235,10 +238,11 @@ async def main(load_s3:bool=True, load_dynamod:bool=True):
 		batch = asyncio.create_task(batch_data(s3_raw_queue, batch_queue, max_batch=MAX_BATCH_SIZE, max_timeout=MAX_BATCH_TIMEOUT))
 		tasks  = [ingest, batch]
 
-		if load_s3:
+		# pipeline integrity check
+		if S3_WRITE == 1:
 			write_s3 = asyncio.create_task(write_to_s3(session, batch_queue, bucket=S3_BUCKET, bucket_dir=S3_JSONL_DIR_PATH, filename="miniticker", gzip=True))
 			tasks.append(write_s3)
-		if load_dynamod:
+		if DYNAMO_WRITE == 1:
 			write_dynamod = asyncio.create_task(write_to_dynamodb(session, dynamo_raw_queue, ttl_days=RETENTION_TTL_DAYS))
 			tasks.append(write_dynamod)
 
@@ -268,4 +272,4 @@ async def main(load_s3:bool=True, load_dynamod:bool=True):
 		await client.close_connection()
 
 if __name__ == '__main__':
-	asyncio.run(main(load_s3=True, load_dynamod=True))
+	asyncio.run(main())

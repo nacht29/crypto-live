@@ -2,8 +2,8 @@
 sudo DOCKER_BUILDKIT=1 sudo docker build -t "crypto-live" .
 
 # pushing image to Docker Hub
-sudo docker tag crypto-live nacht29/crypto-live:latest
-sudo docker push nacht29/crypto-live:latest
+sudo docker tag crypto-live nacht29/crypto-live:crypto-live-DATE
+sudo docker push nacht29/crypto-live:crypto-live-DATE
 
 # run image
 # can be done with 2 options
@@ -11,6 +11,8 @@ sudo docker push nacht29/crypto-live:latest
 # option 1
 sudo docker run --rm -it \
 	-e AWS_PROFILE=crypto-live-pipeline01 \
+	-e S3_WRITE=1 \
+	-e DYNAMO_WRITE=0 \
 	-v /home/nacht29/.aws/config:/root/.aws/config:ro \
 	-v /home/nacht29/.aws/credentials:/root/.aws/credentials:ro \
 	crypto-live
