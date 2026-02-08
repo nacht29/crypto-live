@@ -55,6 +55,7 @@ def process_dt_numeric(object:dict, dt_type:str='dt', numeric_str:str='num') -> 
 				out_object['iso_timestamp'] = iso_timestamp.strftime("%Y-%m-%dT%H-%M-%S.%fZ")
 			else:
 				out_object['iso_timestamp'] = iso_timestamp
+		# if value after replacing 1 '.' is numeric = value is decimal
 		elif numeric_str == 'num' and isinstance(object[key], str) and value.replace('.', '', 1).isdigit():
 			out_object[key] = Decimal(value)
 			continue
