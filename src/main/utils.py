@@ -55,6 +55,7 @@ def process_dt_numeric(object:dict, dt_type:str='dt', numeric_str:str='num') -> 
 				out_object['iso_timestamp'] = iso_timestamp.strftime("%Y-%m-%dT%H-%M-%S.%fZ")
 			else:
 				out_object['iso_timestamp'] = iso_timestamp
+		# if value after replacing 1 '.' is numeric = value is decimal
 		elif numeric_str == 'num' and isinstance(object[key], str) and value.replace('.', '', 1).isdigit():
 			out_object[key] = Decimal(value)
 			continue
@@ -109,25 +110,4 @@ def gzip_file(data:bytes) -> bytes:
 
 	return gzip_buffer.getvalue()
 
-# =====================
-# = Pipeline integriy =
-# =====================
 
-def pipeline_params():
-	s3_write = os.getenv("S3_WRITE", 1)
-	dynamo_write = os.getenv("DYNAMO_WRITE", 1)
-
-	try:
-		s3_write = int(s3_write)
-		if not 0 <= s3_write <= 1:
-			raise ValueError("S3_WRTIE env must be 0 or 1.")
-	except ValueError:
-		raise ValueError("S3_WRTIE env must be 0 or 1.")
-	try:
-		dynamo_write = int(dynamo_write)
-		if not 0 <= dynamo_write <= 1:
-			raise ValueError("DYNAMO_WRITE env must be 0 or 1.")
-	except ValueError:
-		raise ValueError("DYNAMO_WRITE env must be 0 or 1.")
-	
-	return s3_write, dynamo_write

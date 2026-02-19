@@ -7,40 +7,7 @@ from datetime import datetime
 from time import time
 from typing import *
 from utils import *
-
-# AWS boto3 config
-PIPELINE_IAM_USER = os.getenv("PIPELINE_IAM_USER", "") # boto3 profile
-REGION = os.getenv("REGION", "ap-southeast-1") # AWS region
-
-# Data processing
-try:
-	MAX_BATCH_SIZE = int(os.getenv("MAX_BATCH_SIZE", "1000")) # Max size (rows) per microbatch
-except ValueError:
-	print(f"Invalid MAX_BATCH_SIZE")
-	raise(ValueError)
-
-try:
-	MAX_BATCH_TIMEOUT = int(os.getenv("MAX_BATCH_TIMEOUT", "10")) # Wait n seconds for input or force flush (batch)
-except ValueError:
-	print(f"Invalid MAX_BATCH_TIMEOUT")
-	raise(ValueError)
-
-# AWS services
-S3_BUCKET = os.getenv("S3_BUCKET", "crypto-live-bucket") # S3 bucket
-S3_JSONL_DIR_PATH = os.getenv("S3_JSONL_DIR_PATH", "batch_jsonl") # S3 bucket directory path to store raw JSONL
-BINANCE_WEBSOCKET_SECRET = os.getenv("BINANCE_WEBSOCKET_SECRET", "crypto-live.binance_ws") # Secrets Manager - websocket url
-DYNAMO_TABLE_NAME = os.getenv("DYNAMO_TABLE_NAME", "crypto-live-miniticker") # DynamoDB table name
-try:
-	RETENTION_TTL_DAYS = int(os.getenv("RETENTION_TTL_DAYS", 1)) # Days to retent data in DynamoDB table
-except ValueError:
-	print("Invalid TTL")
-	raise(ValueError)
-
-# Pipeline toggle
-S3_WRITE, DYNAMO_WRITE = pipeline_params()
-
-# Async Client
-TESTNET = bool(os.getenv("TESTNET", True))
+from env_var import *
 
 # create boto3 session
 def create_boto3_session(profile:str=None, region:str=None) -> boto3.session:
@@ -214,6 +181,9 @@ async def write_to_s3(session, batch_queue:asyncio.Queue, bucket:str, bucket_dir
 			batch_queue.task_done()
 
 async def main():
+	# log parameters
+	print_env_var()
+
 	# create boto3_session
 	session = create_boto3_session(profile=PIPELINE_IAM_USER, region=REGION)
 
@@ -258,8 +228,6 @@ async def main():
 		# shutdown logic
 		for task in tasks:
 			task.cancel()
-
-		print(f"{datetime.now()} Exec tasks")
 
 		# run tasks concurrently
 		# catches and resolves Ctrl + C before exiting 
