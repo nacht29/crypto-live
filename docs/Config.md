@@ -40,6 +40,7 @@ The pipeline expects the following resources. The resource names below are the d
 		```json
 		{ "streams": ["btcusdt@miniTicker", "ethusdt@miniTicker"] }
 		```
+	- Helper script to generate streams from a copied CoinGecko table: `docs/Streams.md`
 - **(Optional) Glue**
 	- Data Catalog database/table pointing at the raw JSONL S3 prefix
 	- Glue job script to convert S3 JSONL files to Parquet. See [`src/glue/parquet.py`](https://github.com/nacht29/crypto-live/blob/main/src/glue/parquet.py)
