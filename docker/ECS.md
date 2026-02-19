@@ -44,8 +44,8 @@ aws --profile crypto-live-ECS ecr get-login-password --region ap-southeast-1 | d
 ### Tag and push
 
 ``` bash
-docker tag crypto-live:crypto-live-DATE 068561046254.dkr.ecr.ap-southeast-1.amazonaws.com/crypto-live:crypto-live-DATE
-docker push 068561046254.dkr.ecr.ap-southeast-1.amazonaws.com/crypto-live:crypto-live-DATE
+docker tag nacht29/crypto-live:crypto-live-20260218 068561046254.dkr.ecr.ap-southeast-1.amazonaws.com/crypto-live:crypto-live-20260218
+docker push 068561046254.dkr.ecr.ap-southeast-1.amazonaws.com/crypto-live:crypto-live-20260218
 ```
 
 ### BuildX error

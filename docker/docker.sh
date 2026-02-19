@@ -1,12 +1,15 @@
 # build image
-sudo DOCKER_BUILDKIT=1 sudo docker build -t "crypto-live" .
+DATE="${1:-$(date +%Y%m%d)}"
+IMAGE_REPO="nacht29/crypto-live"
+IMAGE_TAG="crypto-live-${DATE}"
+IMAGE_NAME="crypto-live"
+FULL_IMAGE="${IMAGE_REPO}:${IMAGE_TAG}"
+
+sudo DOCKER_BUILDKIT=1 sudo docker build -t "${IMAGE_NAME}" .
 
 # pushing image to Docker Hub
-sudo docker tag crypto-live nacht29/crypto-live:crypto-live-DATE
-sudo docker push nacht29/crypto-live:crypto-live-DATE
-
-# run image
-# can be done with 2 options
+sudo docker tag "${IMAGE_NAME}" "${FULL_IMAGE}"
+sudo docker push "${FULL_IMAGE}"
 
 # option 1
 sudo docker run --rm -it \
@@ -15,7 +18,7 @@ sudo docker run --rm -it \
 	-e DYNAMO_WRITE=0 \
 	-v /home/nacht29/.aws/config:/root/.aws/config:ro \
 	-v /home/nacht29/.aws/credentials:/root/.aws/credentials:ro \
-	crypto-live
+	"${FULL_IMAGE}"
 
-# option 2
-sudo docker compose up
+# # option 2
+# sudo docker compose up
