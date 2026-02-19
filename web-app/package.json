@@ -1,0 +1,32 @@
+{
+  "name": "crypto-live-web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "latest",
+    "@aws-sdk/client-s3": "latest",
+    "@aws-sdk/lib-dynamodb": "latest",
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "swr": "latest",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "eslint": "latest",
+    "eslint-config-next": "latest",
+    "typescript": "latest"
+  },
+  "engines": {
+    "node": ">=18.18.0"
+  }
+}
