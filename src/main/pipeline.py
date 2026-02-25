@@ -134,7 +134,7 @@ async def write_to_dynamodb(session, raw_queue:asyncio.Queue, concurrency:int=20
 	await asyncio.gather(*tasks)
 
 async def write_to_s3(session, batch_queue:asyncio.Queue, bucket:str, bucket_dir:str, filename:str, gzip:bool=True, sse:str | None  = None, sse_kms_key_id:str | None = None):
-	
+
 	s3_client = session.client(service_name="s3")
 	
 	while True:

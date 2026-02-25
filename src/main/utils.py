@@ -87,7 +87,7 @@ def format_stream_data(stream_data:dict) -> dict:
 	except Exception as error:
 		print(f"Failed to format stream data.\n\n{error}")
 		raise
-	
+
 	return format_data
 
 # ===============
@@ -109,5 +109,3 @@ def gzip_file(data:bytes) -> bytes:
 		open_buffer.write(data)
 
 	return gzip_buffer.getvalue()
-
-
